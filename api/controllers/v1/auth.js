@@ -91,7 +91,7 @@ module.exports = {
                     }
 
                 } else {
-                    obj.verification_hash = bcrypt.hashSync(Date.now(),bcrypt.genSaltSync(10));
+                    obj.verification_hash = bcrypt.hashSync(obj.email,bcrypt.genSaltSync(10));
                     var defaultUserType = obj.user_type;
                     delete obj.user_type;
                     var user = new User(obj);
