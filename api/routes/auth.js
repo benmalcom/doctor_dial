@@ -6,7 +6,6 @@ var router = require('express').Router();
 var apiVersion = 'v'+process.env.API_VERSION;
 var AuthController = require('../controllers/'+apiVersion+ '/auth');
 var checkToken = require('../../api/middlewares/auth_token');
-var isUserVerified = require('../../api/middlewares/is_user_verified');
 
 
 router.post('/login', AuthController.login);
@@ -15,6 +14,7 @@ router.post('/login', AuthController.login);
 router.use(checkToken);
 router.post('/register',AuthController.startRegistration)
     .post('/change-password', AuthController.changePassword)
+    .post('/verify-code',AuthController.verifyCode)
     //.post('/reset-password', AuthController.resetPassword)
     .post('/login', AuthController.login);
 

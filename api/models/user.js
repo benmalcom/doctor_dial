@@ -31,8 +31,7 @@ var UserSchema = new Schema({
     patient: { type: Schema.Types.ObjectId, ref: 'Patient'},
     doctor: { type: Schema.Types.ObjectId, ref: 'Doctor'},
     active : { type: Boolean, default: false},
-    verification_hash: {type:String, default: ""},
-    password_reset_token: {type:String},
+    verification_code: {type:String, default: ""},
     password_reset_expiration: {type:Date},
     account_verified : { type: Boolean, default: false},
     device_token: { type : String, default: ""}
@@ -59,10 +58,9 @@ UserSchema.pre('save', function(next){
 UserSchema.post('save', function(doc){
     if(!doc.account_verified)
     {
-        if(('email' in doc && doc.email) && ('verification_hash' in doc && doc.verification_hash))
+        if(('email' in doc && doc.email) && ('verification_code' in doc && doc.verification_code))
         {
-            var urlString = "http://"+config.get('app.baseUrl')+"/account/verify?email="+doc.email+"&access_xters="+doc.verification_hash;
-            var message = "<p>Hi, thank you for choosing to be part of us at DoctorDial, use the below link to activate your account!</p>"+urlString;
+            var message = "<p>Hi, thank you for choosing to be part of us at DoctorDial, use this code to activate your account, </p><b>"+doc.verification_code+"</b>.";
             helper.sendMail(config.get('email.from'),doc.email,"Verify your account!",message)
                 .then(function (err) {
                     console.log('Email Error: ' + err);

@@ -14,89 +14,93 @@ var  helper = require('../../utils/helper');
 module.exports = {
 
     login: function (req, res, next) {
-        var meta = {statusCode:200, success:false},
+        var meta = {code:200, success:false},
             error = {},
             obj = req.body,
             rules = {email: 'required',password:'required|min:6'},
             validator = new Validator(obj,rules);
         if(validator.passes()) {
-            User.findOne({email:obj.email}, function (err, foundUser) {
+            User.findOne({email:obj.email}, function (err, user) {
                 if (err) {
                     error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
                     return next(error);
                 }
 
-                else if (!foundUser) {
-                    error =  helper.transformToError({code:404,message:"Authentication failed. User not found"});
+                else if (!user) {
+                    error =  helper.transformToError({code:404,message:"Authentication failed. User not found"}).toCustom();
                     return next(error);
                 }
 
                 else {
 
-                    if(!foundUser.account_verified) {
-                        foundUser.save(); // TODO: Take care of errors here
-                        meta.error = {code:meta.statusCode, message:"This account has not been verified, please verify it with the link sent to your email!"};
-                        meta.token = misc.signToken({userId:foundUser._id});
-                        return res.status(meta.statusCode).json(formatResponse.do(meta,foundUser));
+                    if(!user.account_verified) {
+                        user.save(); // TODO: Take care of errors here
+                        meta.error = {code:meta.code, message:"This account has not been verified, please verify it with the link sent to your email!"};
+                        meta.token = misc.signToken({userId:user._id});
+                        return res.status(meta.code).json(formatResponse.do(meta,user));
                     }
-                     else if (req.body.password != null && !foundUser.comparePassword(req.body.password)) {
-                        error =  helper.transformToError({code:401,message:"Authentication failed. Wrong password supplied"});
+                     else if (req.body.password != null && !user.comparePassword(req.body.password)) {
+                        error =  helper.transformToError({code:401,message:"Authentication failed. Wrong password supplied"}).toCustom();
                         return next(error);
                     }
 
                     else {
-                        meta.token = misc.signToken({userId:foundUser._id});
+                        meta.token = misc.signToken({userId:user._id});
                         meta.success = true;
-                       return res.status(meta.statusCode).json(formatResponse.do(meta,foundUser));
+                       return res.status(meta.code).json(formatResponse.do(meta,user));
                     }
                 }
 
             });
         }
         else {
-            error =  helper.transformToError({code:400,message:"There are problems with your input",errors:helper.formatValidatorErrors(validator.errors.all())});
+            error =  helper.transformToError({
+                code:400,
+                message:"There are problems with your input",
+                errors:helper.formatValidatorErrors(validator.errors.all())}).toCustom();
             return next(error);
         }
 
     },
 
     startRegistration: function (req, res, next) {
-        var meta = {statusCode:200, success:false},
+        var meta = {code:200, success:false},
             error = {},
             obj = req.body,
             rules = {email:'required',password:'required|min:6',user_type:'required'},
             validator = new Validator(obj,rules);
         if(validator.passes())
         {
-            User.findOne({email:obj.email}, function (err, existingUser) {
+            User.findOne({email:obj.email}, function (err, user) {
                 if (err) {
                     error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
                     return next(error);
                 }
-                else if (existingUser) {
-                    meta.statusCode = 409;
-                    if(!existingUser.account_verified) {
+                else if (user) {
+                    meta.code = 409;
+                    if(!user.account_verified) {
                         obj.verification_code = helper.generateOTCode();
-                        _.extend(existingUser,obj);
-                        existingUser.save(); // TODO: Take care of errors here
+                        _.extend(user,obj);
+                        user.save(); // TODO: Take care of errors here
                         message = "This Account is not verified! If you're the owner please click on the link sent to your email to verify it!";
-                        meta.error = {code:meta.statusCode, message:message};
-                        meta.token = misc.signToken({userId:existingUser._id});
-                        res.status(meta.statusCode).json(formatResponse.do(meta,existingUser));
+                        meta.error = {code:meta.code, message:message};
+                        meta.token = misc.signToken({userId:user._id});
+                        res.status(meta.code).json(formatResponse.do(meta,user));
                     }
                     else {
                           var message = "This email is in use already!";
-                          error =  helper.transformToError({code:409,message:message});
+                          error =  helper.transformToError({code:409,message:message}).toCustom();
                           return next(error);
                     }
 
-                } else {
-                    obj.verification_hash = bcrypt.hashSync(obj.email,bcrypt.genSaltSync(10));
+                }
+                else {
+                    obj.verification_code = helper.generateOTCode();
                     var defaultUserType = obj.user_type;
                     delete obj.user_type;
-                    var user = new User(obj);
-                    user.user_types = [defaultUserType];
-                    var p1 = user.save();
+                    var newUser = new User(obj);
+                    newUser.user_types = [defaultUserType];
+                    var p1 = newUser.save();
                     var patient = new Patient();
                     var p2 = patient.save();
                     Q.all([p1,p2])
@@ -112,7 +116,7 @@ module.exports = {
                             console.log("patient ",patient);
                             meta.success = true;
                             meta.token = misc.signToken({userId:user._id});
-                            res.status(meta.statusCode).json(formatResponse.do(meta,user));
+                            res.status(meta.code).json(formatResponse.do(meta,user));
                         },function (err) {
                             console.log("error ",err);
                             error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
@@ -124,14 +128,63 @@ module.exports = {
         }
         else
         {
-            error =  helper.transformToError({code:400,message:"There are problems with your input",errors:helper.formatValidatorErrors(validator.errors.all())});
+            error =  helper.transformToError({
+                code:400,
+                message:"There are problems with your input",
+                errors:helper.formatValidatorErrors(validator.errors.all())}).toCustom();
             return next(error);
         }
 
 
     },
+    verifyCode: function (req, res, next) {
+        var meta = {code:200, success:false},
+            error = {},
+            obj = req.body,
+            rules = {verification_code: 'required'},
+            validator = new Validator(obj,rules);
+        if(validator.passes())
+        {
+            var userId = req.userId,
+                updateObj = {verification_code:"",account_verified:true,active:true};
+            User.findById(userId).exec()
+                .then(function(user){
+                    if (!user) {
+                        error =  helper.transformToError({code:404,message:"This user does not exist"}).toCustom();
+                        throw error;
+                    }
+                    else if(user && user.account_verified) {
+                        error =  helper.transformToError({code:409,message:"Account verified already!"}).toCustom();
+                        throw error;
+                    }
+                    else if(user && !user.account_verified && user.verification_code != obj.verification_code) {
+                        error =  helper.transformToError({code:409,message:"Incorrect verification code!"}).toCustom();
+                        throw error;
+                    }
+                    _.extend(user,updateObj);
+                    return user.save();
+                })
+                .then(function (user) {
+                    meta.success = true;
+                    meta.message = "Code verification successful!";
+                    return res.status(meta.code).json(formatResponse.do(meta,user));
+                },function (err) {
+                    console.log("Code verification error ",err);
+                    return next(err);
+                });
+        }
+        else
+        {
+            error =  helper.transformToError({
+                code:400,
+                message:"There are problems with your input",
+                errors:helper.formatValidatorErrors(validator.errors.all())}).toCustom();
+            return next(error);
+        }
+
+    },
     changePassword: function (req, res, next) {
-        var meta = {statusCode:200, success:false},
+        var meta = {code:200, success:false},
             error = {},
             obj = req.body,
             rules = {current_password: 'required',new_password: 'required|min:6'},
@@ -141,24 +194,22 @@ module.exports = {
             var userId = req.userId;
 
             User.findById(userId).exec()
-                .then(function (existingUser) {
-                    if(!existingUser)
-                    {
-                        error =  helper.transformToError({code:404,message:"User not found!"});
+                .then(function (user) {
+                    if(!user) {
+                        error =  helper.transformToError({code:404,message:"User not found!"}).toCustom();
                         throw error;
                     }
-                    else if(existingUser && !existingUser.comparePassword(obj.current_password))
-                    {
-                        error =  helper.transformToError({code:422,message:"Operation failed, incorrect password!",});
+                    else if(user && !user.comparePassword(obj.current_password)) {
+                        error =  helper.transformToError({code:422,message:"Operation failed, incorrect password!",}).toCustom();
                         throw error;
                     }
-                    existingUser.password = obj.new_password;
-                    return existingUser.save();
+                    user.password = obj.new_password;
+                    return user.save();
                 })
-                .then(function (existingUser) {
+                .then(function (user) {
                     meta.success = true;
                     meta.message = "Password changed successfully!";
-                    return res.status(meta.statusCode).json(formatResponse.do(meta,existingUser));
+                    return res.status(meta.code).json(formatResponse.do(meta,user));
                 },function (err) {
                     console.log("Change password error ",err);
                     return next(err);
@@ -166,7 +217,10 @@ module.exports = {
         }
         else
         {
-            error =  helper.transformToError({code:400,message:"There are problems with your input",errors:helper.formatValidatorErrors(validator.errors.all())});
+            error =  helper.transformToError({
+                code:400,
+                message:"There are problems with your input",
+                errors:helper.formatValidatorErrors(validator.errors.all())}).toCustom();
             return next(error);
         }
 

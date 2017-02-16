@@ -10,6 +10,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var http = require('http');
 var config = require('config');
+var _ = require('underscore');
 var cors = require('cors');
 var engine = require('ejs-mate');
 var sanitizeInputs = require('./api/middlewares/sanitize');
@@ -18,14 +19,11 @@ var formatResponse = require('./api/utils/format-response');
 
 
 var apiRoutes = require('./api/routes/index');
-var appRoutes = require('./web/routes/index');
-
-
 var app = express();
 
 // view engine setup
 app.engine('ejs', engine);
-app.set('views', path.join(__dirname, 'web/views'));
+app.set('views', path.join(__dirname, 'wviews'));
 app.set('view engine', 'ejs');
 app.set('port',process.env.PORT || config.get('app.port'));
 
@@ -47,11 +45,7 @@ app.use(sanitizeInputs);
 
 //enable cors
 app.use(cors());
-
-
 apiRoutes(app);
-appRoutes(app);
-
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     var err = new Error('Not Found');
@@ -64,26 +58,22 @@ app.use(function (req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-    app.use(function (err, req, res, next) {
-        console.log("err ", JSON.stringify(err));
-        var meta = {};
-        meta.statusCode = err.code || err.status || 500;
-        meta.error = {code: meta.statusCode, message: err.message || "Error in server interaction"};
-        if (err.errors)
-            meta.error.errors = err.errors;
-        return res.status(meta.statusCode).json(formatResponse.do(meta));
+    app.use(function(err, req, res, next) {
+        var meta = {success:false};
+        meta.status_code = err.code || err.status || 500;
+        meta.error = err.custom ? _.omit(err,'custom') : {code: meta.status_code, message: err.message || "Error in server interaction"};
+        if(err.errors)
+            meta.error.list = err.errors;
+        return res.status(meta.status_code).json(formatResponse.do(meta));
     });
 }
-
-// production error handler
-// no stack traces leaked to user
-app.use(function (err, req, res, next) {
-    var meta = {};
-    meta.statusCode = err.code || 500;
-    meta.error = {code: meta.statusCode, message: err.message || "Error in server interaction"};
-    if (err.errors)
-        meta.error.errors = err.errors;
-    return res.status(meta.statusCode).json(formatResponse.do(meta));
+app.use(function(err, req, res, next) {
+    var meta = {success:false};
+    meta.status_code = err.code || err.status || 500;
+    meta.error = err.custom ? _.omit(err,'custom') : {code: meta.status_code, message: err.message || "Error in server interaction"};
+    if(err.errors)
+        meta.error.list = err.errors;
+    return res.status(meta.status_code).json(formatResponse.do(meta));
 });
 
 var server = http.createServer(app);
