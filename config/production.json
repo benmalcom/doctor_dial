@@ -1,0 +1,9 @@
+{
+  "app":
+  {
+    "baseUrl": "docdial.herokuapp.com"
+  },
+  "db": {
+    "url": "mongodb://docdial:docdial@ds033116.mlab.com:33116/docdial"
+  }
+}

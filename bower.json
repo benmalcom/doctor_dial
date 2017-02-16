@@ -1,0 +1,22 @@
+{
+  "name": "docdial_api",
+  "description": "",
+  "main": "",
+  "authors": [
+    "benEkaruztech <benjaminikeji@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "/web_client/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "font-awesome": "^4.7.0"
+  }
+}

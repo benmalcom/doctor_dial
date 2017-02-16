@@ -1,0 +1,59 @@
+{
+    "app":
+    {
+        "name": "docdial",
+        "port": 4400,
+        "baseUrl": "localhost:4400"
+    },
+    "api":
+    {
+        "prefix": "/api",
+        "versions": [1]
+    },
+    "authToken":{
+        "superSecret":"laidcod",
+        "expiresIn" : 86400
+    },
+    "db": {
+        "url": "mongodb://docdial:docdial@ds033116.mlab.com:33116/docdial"
+    },
+    "googleMapsOptions": {
+        "provider": "google",
+        "httpAdapter": "https",
+        "apiKey": "AIzaSyDQmO7eDIifg9LKlqFUwiLWNfv8dR7x8Qo",
+        "formatter": null
+    },
+    "twilio":{
+        "ACCOUNT_SID":"ACf119c9df7586ed00d6710d6a0fb83da4",
+        "AUTH_TOKEN":"3d10a9a7a02b46188c6e9f983d18c470",
+        "FROM":"+12138630531"
+    },
+    "email": {
+        "drivers": {
+            "mailgun": {
+                "auth": {
+                    "domain": "sandbox6b7f8edfcc024e909aa920da19b561c7.mailgun.org",
+                    "api_key":"key-c4d58c0683befb70eda27124cbaa82f6"
+                }
+            },
+            "sendgrid": {
+                "auth": {
+                    "api_user": "benmalcom",
+                    "api_key":"Benny_95"
+                }
+            }
+        },
+        "from":"noreply@doctordial.com"
+    },
+    "itemsPerPage": {
+        "default": 10
+    },
+    "aws": {
+        "credentials": {
+            "accessKeyId": "AKIAJDCCOFR3ZUWOI7OA",
+            "secretAccessKey": "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",
+            "region": "us-west-2"
+        },
+        "bucket": "docdial"
+    }
+}
