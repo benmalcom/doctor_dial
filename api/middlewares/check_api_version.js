@@ -14,6 +14,6 @@ module.exports = function(req, res, next) {
         process.env.API_VERSION = apiVersionHeader;
     }
 
-    console.log("api version = "+process.env.API_VERSION+"......")
+    console.log("api version = "+process.env.API_VERSION+"......");
     next();
 };
