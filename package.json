@@ -6,9 +6,9 @@
     "node": "6.9.1"
   },
   "scripts": {
-    "start": "node app",
     "postinstall": "bower install",
-    "test": "node_modules/.bin/mocha -w test/**/**"
+    "test": "node_modules/.bin/mocha -w test/**/**",
+    "start": "node app"
   },
   "dependencies": {
     "aws-sdk": "^2.14.0",

@@ -48,6 +48,7 @@ app.use(sanitizeInputs);
 //enable cors
 app.use(cors());
 
+
 apiRoutes(app);
 appRoutes(app);
 
