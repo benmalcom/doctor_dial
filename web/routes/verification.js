@@ -5,6 +5,6 @@
 var router = require('express').Router();
 var VerificationController = require('../../web/controllers/verification');
 
-router.get('/verify-me',VerificationController.getVerifyUser);
+router.get('/account/verify',VerificationController.getVerifyUser);
 
 module.exports = router;

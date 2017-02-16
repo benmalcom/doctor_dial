@@ -61,7 +61,7 @@ UserSchema.post('save', function(doc){
     {
         if(('email' in doc && doc.email) && ('verification_hash' in doc && doc.verification_hash))
         {
-            var urlString = "http://"+config.get('app.baseUrl')+"/verify-me?email="+doc.email+"&access_xters="+doc.verification_hash;
+            var urlString = "http://"+config.get('app.baseUrl')+"/account/verify?email="+doc.email+"&access_xters="+doc.verification_hash;
             var message = "<p>Hi, thank you for choosing to be part of us at DoctorDial, use the below link to activate your account!</p>"+urlString;
             helper.sendMail(config.get('email.from'),doc.email,"Verify your account!",message)
                 .then(function (err) {
