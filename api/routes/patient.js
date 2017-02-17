@@ -18,5 +18,4 @@ router.route('/patients/:patient_id')
     .put(PatientController.update)
     .delete(PatientController.delete);
 router.get('/patients',PatientController.find);
-router.post('/patients/:patient_id/avatar',PatientController.updateAvatar);
 module.exports = router;

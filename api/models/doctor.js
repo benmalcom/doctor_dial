@@ -2,9 +2,7 @@
  * Created by Ekaruztech on 9/2/2016.
  */
 var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var NodeGeocoder = require('node-geocoder');
-var config = require('config');
+var Schema = mongoose.Schema;;
 
 var DoctorSchema = new Schema({
     user: {type: Schema.Types.ObjectId, ref: 'User'},

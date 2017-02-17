@@ -4,8 +4,6 @@
 
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var NodeGeocoder = require('node-geocoder');
-var config = require('config');
 
 var PatientSchema = new Schema({
     user: {type: Schema.Types.ObjectId, ref: 'User'},
@@ -13,7 +11,7 @@ var PatientSchema = new Schema({
     weight: { type: String},
     blood_group: { type: String},
     kids: { type: Number},
-    pregnant: { type: Boolean, defaultsTo: false},
+    pregnant: { type: Boolean, default: false},
     height: { type: String},
     hbs_status: { type: String},
     religion: { type: String},
@@ -25,6 +23,25 @@ var PatientSchema = new Schema({
 },{
     timestamps: true
 });
+
+PatientSchema.statics.createRules = function() {
+    return {
+        user: 'required',
+        next_of_kin: 'required',
+        weight: 'required',
+        blood_group: 'required',
+        kids: 'required',
+        pregnant: 'required',
+        height: 'required',
+        hbs_status: 'required',
+        religion: 'required',
+        occupation: 'required',
+        known_allergies: 'required',
+        medical_conditions: 'required',
+        current_medications: 'required',
+        gynaecological_history: 'required'
+    };
+};
 
 PatientSchema.post('save', function(doc) {
     console.log('patient %s has been saved', doc._id);

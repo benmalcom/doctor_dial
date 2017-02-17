@@ -6,8 +6,8 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var NodeGeocoder = require('node-geocoder');
 var config = require('config');
-var nodemailer = require('nodemailer');
-var mailgun = require('nodemailer-mailgun-transport');
+var helper = require('../utils/helper');
+
 
 var DoctorRequestSchema = new Schema({
     first_name : { type: String},
@@ -32,6 +32,14 @@ var DoctorRequestSchema = new Schema({
 },{
     timestamps: true
 });
+DoctorRequestSchema.statics.createRules = function() {
+    return {
+            first_name : 'required', last_name : 'required', mobile : 'required', email: 'required', gender : 'required',
+            dob: 'required', years_of_practice: 'required', current_employer: 'required', mdcnr_number: 'required',
+            medical_school_attended: 'required', specialties: 'required', location: 'required'
+    };
+};
+
 DoctorRequestSchema.index({'location.coordinates': '2dsphere' });
 
 DoctorRequestSchema.pre('save', function(next){
@@ -44,8 +52,7 @@ DoctorRequestSchema.pre('save', function(next){
     geocoder.geocode(address)
         .then(function(res) {
             console.log("res ",res);
-            if(Array.isArray(res) && res[0])
-            {
+            if(Array.isArray(res) && res[0]) {
                 data.location.coordinates = [res[0].longitude,res[0].latitude];
             }
             next();
@@ -59,56 +66,17 @@ DoctorRequestSchema.pre('save', function(next){
 DoctorRequestSchema.post('save', function(doc){
     if(!doc.approved && (doc.createdAt == doc.updatedAt))
     {
-        if('email' in doc && doc.email)
-        {
+        if('email' in doc && doc.email) {
             var message = "Hello "+doc.first_name+", your application has been received, and we are working on it! You'll hear from us soon!";
-            var nodemailerMailgun = nodemailer.createTransport(mailgun(config.get('email.drivers.mailgun')));
-
-            nodemailerMailgun.sendMail({
-                from: config.get('email.from'),
-                to: doc.email, // An array if you have multiple recipients.
-                subject: 'DoctorDial!',
-                //You can use "html:" to send HTML email content. It's magic!
-                html: message
-            }, function (err, info) {
-                if (err) {
+            helper.sendMail(config.get('email.from'),doc.email,"DoctorDial - Application received!",message)
+                .then(function (err) {
                     console.log('Email Error: ' + err);
-                }
-                else {
+                },function (info) {
                     console.log('Email Response: ' + info);
-                }
-            });
+                });
         }
     }
 });
-
-DoctorRequestSchema.post('save', function(doc){
-    if(doc.approved)
-    {
-        if('email' in doc && doc.email)
-        {
-            var message = "Hello "+doc.first_name+", your application has been approved, follow this link to start your registration!, "+
-                config.get('app.baseUrl')+"/doctor-reg?email="+doc.email;
-            var nodemailerMailgun = nodemailer.createTransport(mailgun(config.get('email.drivers.mailgun')));
-
-            nodemailerMailgun.sendMail({
-                from: config.get('email.from'),
-                to: doc.email, // An array if you have multiple recipients.
-                subject: 'DoctorDial!',
-                //You can use "html:" to send HTML email content. It's magic!
-                html: message
-            }, function (err, info) {
-                if (err) {
-                    console.log('Email Error: ' + err);
-                }
-                else {
-                    console.log('Email Response: ' + info);
-                }
-            });
-        }
-    }
-});
-
 DoctorRequestSchema.post('save', function(doc) {
     console.log('Doctor request %s has been saved', doc._id);
 });

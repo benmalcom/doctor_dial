@@ -68,7 +68,6 @@ exports.generateOTCode = function()
         var nums = [0,1,2,3,4,5,6,7,8,9],
             selections = "",
             numPicks = 5;
-
         // randomly pick one from the array
         for (var i = 0; i < numPicks; i++) {
             var index = Math.floor(Math.random() * nums.length);
@@ -78,7 +77,36 @@ exports.generateOTCode = function()
         return 'DD'+selections;
 };
 
-exports.formatValidatorErrors = function (error) {
+exports.defaultPassword = function () {
+    var generator = new IDGenerator(6);
+    return 'P'+generator.generate();
+};
+function IDGenerator(length) {
+
+    this.length = length;
+    this.timestamp = +new Date;
+
+    var _getRandomInt = function( min, max ) {
+        return Math.floor( Math.random() * ( max - min + 1 ) ) + min;
+    };
+
+    this.generate = function() {
+        var ts = this.timestamp.toString();
+        var parts = ts.split( "" ).reverse();
+        var id = "";
+
+        for( var i = 0; i < this.length; ++i ) {
+            var index = _getRandomInt( 0, parts.length - 1 );
+            id += parts[index];
+        }
+
+        return id;
+    }
+
+
+}
+
+exports.validationErrorsToArray = function (error) {
     var errorsArray = [];
     if(!_.isEmpty(error))
     {

@@ -9,13 +9,22 @@ var AppointmentSchema = new Schema({
     title: { type: String},
     description: { type: String},
     time : { type: String},
-    date : { type: Date, defaultsTo: Date.now},
-    patient: { type: Schema.Types.ObjectId, ref: 'Patient'},
-    doctor: { type: Schema.Types.ObjectId, ref: 'Doctor'},
-    done : { type: Boolean, defaultsTo: false}
+    date : { type: Date, default: Date.now},
+    patient: { type: Schema.Types.ObjectId, ref: 'User'},
+    doctor: { type: Schema.Types.ObjectId, ref: 'User'},
+    done : { type: Boolean, default: false}
 },{
     timestamps: true
 });
+
+AppointmentSchema.statics.createRules = function() {
+    return {
+        time: 'required',
+        date: 'required',
+        doctor: 'required',
+        patient: 'required'
+    };
+};
 
 AppointmentSchema.post('save', function(doc) {
     console.log('Appointment %s has been saved', doc._id);

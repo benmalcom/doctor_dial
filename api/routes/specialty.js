@@ -22,6 +22,8 @@ router.route('/specialties/:specialty_id')
     .get(SpecialtyController.findOne)
     .put(SpecialtyController.update)
     .delete(SpecialtyController.delete);
-router.get('/specialties/:specialty_id/sub',SpecialtyController.getSubSpecialties);
+router.route('/specialties/:specialty_id/sub-specialties')
+    .post(SpecialtyController.createSubSpecialty)
+    .get(SpecialtyController.findSubSpecialties);
 
 module.exports = router;

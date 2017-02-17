@@ -29,7 +29,7 @@ module.exports = {
         });
     },
 
-    saveUserType: function(req, res){
+    saveUserType: function(req, res, next){
         var meta = {code:200, success:true},
             error = {};
             var obj = req.body;
@@ -58,12 +58,13 @@ module.exports = {
             }
     },
 
-    findOne: function (req, res) {
+    findOne: function (req, res, next) {
         var meta = {code:200, success:true};
-            res.status(meta.code).json(formatResponse.do(meta,userType));
+        var userType = req.userType;
+        res.status(meta.code).json(formatResponse.do(meta,userType));
     },
 
-    find: function (req, res) {
+    find: function (req, res, next) {
         var query = req.query,
             meta = {code:200, success:true},
             error = {};
@@ -97,7 +98,7 @@ module.exports = {
         });
     },
 
-    delete: function (req, res) {
+    delete: function (req, res, next) {
         var meta = {code:200, success:true},
             error = {},
             userType = req.userType;
@@ -113,7 +114,7 @@ module.exports = {
             }); //TODO: Handle errors
     },
 
-    update: function(req, res){
+    update: function(req, res, next){
         var meta = {code:200, success:true},
             obj = req.body,
             error = {},

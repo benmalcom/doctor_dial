@@ -38,6 +38,7 @@
     "serve-favicon": "~2.3.0",
     "twilio": "^2.10.0",
     "underscore": "^1.8.3",
+    "valid-objectid": "0.0.2",
     "validatorjs": "^3.6.0"
   },
   "devDependencies": {

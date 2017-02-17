@@ -12,7 +12,7 @@ var checkToken = require('../../api/middlewares/auth_token');
 router.use(checkToken);
 
 router.route('/doctors')
-    .post(DoctorController.create)
+    //.post(DoctorController.create)
     .get(DoctorController.find);
 
 /*doctor_id param*/
@@ -21,5 +21,4 @@ router.route('/doctors/:doctor_id')
     .get(DoctorController.findOne)
     .put(DoctorController.update)
     .delete(DoctorController.delete);
-router.post('/doctors/:doctor_id/avatar',DoctorController.updateAvatar);
 module.exports = router;

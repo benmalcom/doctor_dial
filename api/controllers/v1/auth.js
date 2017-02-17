@@ -105,15 +105,11 @@ module.exports = {
                     var p2 = patient.save();
                     Q.all([p1,p2])
                         .spread(function (user,patient) {
-                            console.log("user ",user);
-                            console.log("patient ",patient);
                             user.patient = patient._id;
                             patient.user = user._id;
                             return Q.all([user.save(),patient.save()])
                         })
                         .spread(function (user,patient) {
-                            console.log("user ",user);
-                            console.log("patient ",patient);
                             meta.success = true;
                             meta.token = misc.signToken({userId:user._id});
                             res.status(meta.code).json(formatResponse.do(meta,user));

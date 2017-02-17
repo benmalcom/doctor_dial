@@ -7,10 +7,17 @@ var Schema = mongoose.Schema;
 
 var TimeRangeSchema = new Schema({
     value : { type: String},
-    disabled : { type: Boolean, defaultsTo: false}
+    disabled : { type: Boolean, default: false}
 },{
     timestamps: true
 });
+
+TimeRangeSchema.statics.createRules = function() {
+    return {
+        value : 'required'
+    }
+};
+
 
 TimeRangeSchema.post('save', function(doc) {
     console.log('Time Range %s has been saved', doc._id);

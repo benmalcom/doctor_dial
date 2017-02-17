@@ -62,6 +62,7 @@ if (app.get('env') === 'development') {
         var meta = {success:false};
         meta.status_code = err.code || err.status || 500;
         meta.error = err.custom ? _.omit(err,'custom') : {code: meta.status_code, message: err.message || "Error in server interaction"};
+        console.log("errors ",meta.error);
         if(err.errors)
             meta.error.list = err.errors;
         return res.status(meta.status_code).json(formatResponse.do(meta));

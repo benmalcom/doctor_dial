@@ -12,6 +12,14 @@ var SubSpecialtySchema = new Schema({
     timestamps: true
 });
 
+SubSpecialtySchema.statics.createRules = function() {
+    return {
+        name : 'required',
+        specialty : 'required'
+    }
+};
+
+
 SubSpecialtySchema.post('save', function(doc) {
     console.log('Sub Specialty %s has been saved', doc._id);
 });
