@@ -96,7 +96,7 @@ module.exports = {
                             }
                             else {
                                 obj.verification_code = helper.generateOTCode();
-                                _.extend(user, obj);
+                                _.extend(existingUser, obj);
                                 existingUser.save(); // TODO: Take care of errors here
                                 message = "This Account is not verified! If you're the owner please click on the link sent to your email to verify it!";
                                 meta.error = {code: meta.code, message: message};
