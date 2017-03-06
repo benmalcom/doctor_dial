@@ -15,7 +15,7 @@ var UserSchema = new Schema({
     password : {type:String,minlength: 6},
     first_name : { type: String},
     last_name : { type: String},
-    mobile : { type: String, unique : true },
+    mobile : { type: String},
     other_mobiles: [String],
     gender : { type: String},
     avatar: { type : String},
@@ -71,7 +71,6 @@ UserSchema.post('save', function(doc){
     }
 });
 
-/*
 UserSchema.post('save', function(doc){
     if(!doc.account_verified)
     {
@@ -87,7 +86,6 @@ UserSchema.post('save', function(doc){
         }
     }
 });
-*/
 
 
 UserSchema.post('save', function(doc) {
