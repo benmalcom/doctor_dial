@@ -81,7 +81,7 @@ module.exports = {
                 if (Object.hasOwnProperty.call(obj, 'mobile')) criteria['$or'].push({mobile: obj.mobile});
                 if (Object.hasOwnProperty.call(obj, 'email')) criteria['$or'].push({email: obj.email});
                 console.log("criteria ", criteria);
-                User.findOne(criteria).exec()
+                User.findOne(criteria)
                     .then(function (existingUser) {
                         if (existingUser) {
                             if (existingUser.account_verified) {
@@ -98,7 +98,7 @@ module.exports = {
                                 obj.verification_code = helper.generateOTCode();
                                 _.extend(existingUser, obj);
                                 existingUser.save(); // TODO: Take care of errors here
-                                message = "This Account is not verified! If you're the owner please click on the link sent to your email to verify it!";
+                                message = "This Account is not verified! If you're the owner please click your email to verify it!";
                                 meta.error = {code: meta.code, message: message};
                                 meta.token = misc.signToken({userId: existingUser._id});
                                 return res.status(meta.code).json(formatResponse.do(meta, existingUser));
