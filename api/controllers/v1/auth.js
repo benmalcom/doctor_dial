@@ -80,7 +80,6 @@ module.exports = {
                 var criteria = {'$or': []};
                 if (Object.hasOwnProperty.call(obj, 'mobile')) criteria['$or'].push({mobile: obj.mobile});
                 if (Object.hasOwnProperty.call(obj, 'email')) criteria['$or'].push({email: obj.email});
-                console.log("criteria ", criteria);
                 User.findOne(criteria)
                     .then(function (existingUser) {
                         if (existingUser) {
@@ -91,7 +90,6 @@ module.exports = {
                                 if (Object.hasOwnProperty.call(obj, 'email') && existingUser.email && obj.email == existingUser.email)
                                     message = "This email address already exists";
                                 error = helper.transformToError({code: 409, message: message}).toCustom();
-                                console.log("Error ", error);
                                 throw error;
                             }
                             else {
@@ -117,7 +115,7 @@ module.exports = {
                     .spread(function (user, patient) {
                         user.patient = patient._id;
                         patient.user = user._id;
-                        return Q.all([user.save(), patient.save()])
+                        return Q.all([user.save(), patient.save()]);
                     })
                     .spread(function (user, patient) {
                         meta.success = true;

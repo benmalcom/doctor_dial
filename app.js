@@ -44,7 +44,7 @@ app.use(setApiVersion);
 app.use(sanitizeInputs);
 
 //enable cors
-app.use(cors());
+app.use(cors({credentials: true, origin: true}));
 apiRoutes(app);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
