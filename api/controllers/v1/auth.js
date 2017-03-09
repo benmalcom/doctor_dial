@@ -22,16 +22,11 @@ module.exports = {
         if (validator.passes()) {
             User.findOne({$or: [{email: obj.username}, {mobile: obj.username}]})
                 .then(function (user) {
-
                     if (!user) {
-                        error = helper.transformToError({
-                            code: 404,
-                            message: "Authentication failed. User not found"
-                        }).toCustom();
-                        throw error;
+                        error = helper.transformToError({code: 404, message: "Authentication failed. User not found"}).toCustom();
+                        return next(error);
                     }
                     else {
-
                         if (!user.account_verified) {
                             user.save(); // TODO: Take care of errors here
                             meta.error = {
@@ -56,6 +51,13 @@ module.exports = {
                         }
                     }
 
+                },function (err) {
+                    console.log("error ", err);
+                    error = helper.transformToError({
+                        code: err.custom ? err.code : 503,
+                        message: err.custom ? err.message : "Error in server interaction!"
+                    });
+                    return next(error);
                 });
         }
         else {
@@ -180,8 +182,12 @@ module.exports = {
                     meta.message = "Code verification successful!";
                     return res.status(meta.code).json(formatResponse.do(meta, user));
                 }, function (err) {
-                    console.log("Code verification error ", err);
-                    return next(err);
+                    console.log("error ", err);
+                    error = helper.transformToError({
+                        code: err.custom ? err.code : 503,
+                        message: err.custom ? err.message : "Error in server interaction!"
+                    });
+                    return next(error);
                 });
         }
         else {
@@ -227,8 +233,12 @@ module.exports = {
                     meta.message = "Password changed successfully!";
                     return res.status(meta.code).json(formatResponse.do(meta, user));
                 }, function (err) {
-                    console.log("Change password error ", err);
-                    return next(err);
+                    console.log("error ", err);
+                    error = helper.transformToError({
+                        code: err.custom ? err.code : 503,
+                        message: err.custom ? err.message : "Error in server interaction!"
+                    });
+                    return next(error);
                 });
         }
         else {
