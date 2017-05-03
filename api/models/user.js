@@ -16,7 +16,7 @@ var UserSchema = new Schema({
     first_name : { type: String},
     last_name : { type: String},
     mobile : {type: String},
-    other_mobiles: [String],
+    mobile2: {type: String},
     gender : {type: String},
     avatar: {type : String},
     dob: {type : String},
@@ -27,13 +27,14 @@ var UserSchema = new Schema({
         zip: String,
         coordinates: [Number]
     },
-    user_types : [{type: Schema.Types.ObjectId, ref: 'UserType'}],
     patient: { type: Schema.Types.ObjectId, ref: 'Patient'},
     doctor: { type: Schema.Types.ObjectId, ref: 'Doctor'},
+    is_admin : { type: Boolean, default: false},
     active : { type: Boolean, default: false},
     verification_code: {type:String, default: ""},
     password_reset_expiration: {type:Date},
     account_verified : { type: Boolean, default: false},
+    change_password: {type: Boolean, default: false},
     device_token: { type : String, default: ""}
 
 },{

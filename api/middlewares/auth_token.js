@@ -5,14 +5,14 @@ var jwt    = require('jsonwebtoken'); // used to create, sign, and verify tokens
 var config = require('config');
 var formatResponse = require('../utils/format-response');
 module.exports = function(req, res, next) {
-    var excludedUrls = ['/','/api/login','/api/register','/api/doctor-requests','/api/user-types'];
+    var excludedUrls = ['/','/api/login','/api/register','/api/reset-password','/api/doctor-requests','/api/user-types'];
 
     if (req.method.toLowerCase() == "get") return next();
     if (excludedUrls.indexOf(req.originalUrl) > -1) return next();
 
     // check header or url parameters or post parameters for token
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
-    var meta = {statusCode:401, success:false};
+    var meta = {error:{code:401}};
     // decode token
     if (token) {
         // verifies secret and checks exp
@@ -30,8 +30,8 @@ module.exports = function(req, res, next) {
                             message = "Failed to authenticate token";break;
                     }
                 }
-                meta.error = {code:401, message:message,extra:err};
-                return res.status(meta.statusCode).json(formatResponse.do(meta));
+                meta.error.message = message;
+                return res.status(meta.error.code).json(formatResponse.do(meta));
             } else {
                 console.log('Token verified!');
                 // if everything is good, save to request for use in other routes
@@ -43,7 +43,7 @@ module.exports = function(req, res, next) {
     } else {
         console.log('No token supplied!');
         // if there is no token, return an error
-        meta.error = {code:401, message:"No authorization token provided"};
-        return res.status(meta.statusCode).json(formatResponse.do(meta));
+        meta.error.message = "No authorization token provided";
+        return res.status(meta.error.code).json(formatResponse.do(meta));
     }
 };

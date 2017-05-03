@@ -1,8 +1,9 @@
 /**
- * Created by Malcom on 8/30/2016.
+ * Created by Malcom on 4/23/2017.
  */
+
 var Q = require('q');
-var Appointment = require('../../models/appointment');
+var ConsultingHour = require('../../models/consulting-hour');
 var formatResponse = require('../../utils/format-response');
 var Validator = require('validatorjs');
 var _ = require('underscore');
@@ -12,19 +13,19 @@ var ObjectId = require('valid-objectid');
 
 module.exports = {
 
-    appointmentIdParam: function (req,res,next,appointment_id) {
+    consultingHourIdParam: function (req,res,next,consulting_hour_id) {
         var error = {};
-        Appointment.findById(appointment_id, function (err, appointment) {
+        ConsultingHour.findById(consulting_hour_id, function (err, consultingHour) {
             if (err) {
-                console.error("appointment_id params error ",err);
+                console.error("consulting_hour_id params error ",err);
                 return next(err);
             }
-            else if(appointment) {
-                req.appointment = appointment;
+            else if(consultingHour) {
+                req.consultingHour = consultingHour;
                 next();
             }
             else {
-                error =  helper.transformToError({code:404,message:"Appointment not found!"}).toCustom();
+                error =  helper.transformToError({code:404,message:"Consulting hour not found!"}).toCustom();
                 return next(error);
             }
         });
@@ -35,19 +36,25 @@ module.exports = {
         var error = {};
         var obj = req.body;
         var userId = req.userId;
-        var rules = Appointment.createRules();
+        var rules = ConsultingHour.createRules();
         var validator = new Validator(obj,rules);
         if(validator.passes()) {
-            var appointment = new Appointment(obj);
-            _.extend(appointment,{patient: userId});
-            appointment.save(function (err,savedAppointment) {
+            var consultingHour = new ConsultingHour(obj);
+            _.extend(consultingHour,{doctor: userId});
+            consultingHour.save(function (err,savedConsultingHour) {
                 if(err) {
-                    error =  helper.transformToError({code:503,message:"Sorry the appointment could not be saved at this time, try again!"}).toCustom();
+                    error =  helper.transformToError({code:503,message:"Sorry the consulting hour could not be saved at this time, try again!"}).toCustom();
                     return next(error);
                 }
                 else {
-                    meta.message = "Appointment has been setup!";
-                    res.status(meta.code).json(formatResponse.do(meta,savedAppointment));
+                    meta.message = "Consulting hour has been setup!";
+                    var opts = [
+                        { path: 'time_ranges'}
+                    ];
+                    ConsultingHour.populate(consultingHour, opts, function (err, populated) {
+                        if(err) return res.status(meta.code).json(formatResponse.do(meta, populated));
+                        return res.status(meta.code).json(formatResponse.do(meta, savedConsultingHour));
+                    });
                 }
             });
 
@@ -63,8 +70,14 @@ module.exports = {
 
     findOne: function (req, res, next) {
         var meta = {code:200, success:true};
-        var appointment = req.appointment;
-        res.status(meta.code).json(formatResponse.do(meta,appointment));
+        var consultingHour = req.consultingHour;
+        var opts = [
+            { path: 'time_ranges'}
+        ];
+        ConsultingHour.populate(consultingHour, opts, function (err, populated) {
+            if(err) return res.status(meta.code).json(formatResponse.do(meta, populated));
+            return res.status(meta.code).json(formatResponse.do(meta, consultingHour));
+        });
     },
 
     find: function (req, res, next) {
@@ -75,28 +88,12 @@ module.exports = {
 
         var per_page = query.per_page ? parseInt(query.per_page,"10") : config.get('itemsPerPage.default');
         var page = query.page ? parseInt(query.page,"10") : 1;
-        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/appointments";
+        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/consulting-hours";
 
-        if(query.approved){
-            var approved = (query.approved == "true");
-            queryCriteria.approved = approved;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "approved="+approved);
-        }
-        if(query.done){
-            var done = (query.done == "true");
-            queryCriteria.done = done;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "done="+done);
-        }
-        if(query.doctor && typeof ObjectId.isValid(query.doctor)){
-            var dObjectId = query.doctor;
+        if(query.doctor_id && typeof ObjectId.isValid(query.doctor_id)){
+            var dObjectId = query.doctor_id;
             queryCriteria.doctor = dObjectId;
             baseRequestUrl = helper.appendQueryString(baseRequestUrl, "doctor="+dObjectId);
-        }
-
-        if(query.patient && typeof ObjectId.isValid(query.patient)) {
-            var pObjectId = query.patient;
-            queryCriteria.patient = pObjectId;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient=" + pObjectId);
         }
 
         meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl,"page="+page)};
@@ -107,22 +104,21 @@ module.exports = {
         }
 
         Q.all([
-            Appointment.find(queryCriteria)
+            ConsultingHour.find(queryCriteria)
                 .populate([
-                    { path: 'doctor'},
-                    { path: 'patient'},
-                    { path: 'time_ranges'}
-                ])
-                .skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
-            Appointment.count(queryCriteria).exec()
-        ]).spread(function(appointments, count) {
+                { path: 'doctor'},
+                { path: 'time_ranges'}
+            ])
+            .skip(per_page * (page-1)).limit(per_page).sort('sequence'),
+            ConsultingHour.count(queryCriteria).exec()
+        ]).spread(function(consultingHours, count) {
             meta.pagination.total_count = count;
             if(count > (per_page * page)) {
                 var next = page + 1;
                 meta.pagination.next = next;
                 meta.pagination.next_page = helper.appendQueryString(baseRequestUrl,"page="+next);
             }
-            res.status(meta.code).json(formatResponse.do(meta,appointments));
+            res.status(meta.code).json(formatResponse.do(meta,consultingHours));
         }, function(err) {
             console.log("err ",err);
             error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
@@ -133,14 +129,14 @@ module.exports = {
     delete: function (req, res, next) {
         var meta = {code:200, success:true},
             error = {},
-            appointment = req.appointment;
-        appointment.remove(function (err) {
+            consultingHour = req.consultingHour;
+        consultingHour.remove(function (err) {
             if(err){
                 error =  helper.transformToError({code:503,message:"Error in server interaction"}).toCustom();
                 return next(error);
             }
             else {
-                meta.message = "Appointment deleted!";
+                meta.message = "Consulting hour deleted!";
                 res.status(meta.code).json(formatResponse.do(meta));
             }
         }); //TODO: Handle errors
@@ -150,16 +146,22 @@ module.exports = {
         var meta = {code:200, success:true},
             obj = req.body,
             error = {},
-            appointment = req.appointment;
-        _.extend(appointment,obj);
-        appointment.save(function (err,savedAppointment) {
+            consultingHour = req.consultingHour;
+        _.extend(consultingHour,obj);
+        consultingHour.save(function (err,savedConsultingHour) {
             if(err) {
-                error =  helper.transformToError({code:503,message:"Sorry your appointment not be updated at this time, try again!"}).toCustom();
+                error =  helper.transformToError({code:503,message:"Sorry your consulting hour not be updated at this time, try again!"}).toCustom();
                 return next(error);
             }
             else {
-                meta.success = true;
-                res.status(meta.code).json(formatResponse.do(meta,savedAppointment));
+                meta.message = "Consulting hour updated!";
+                var opts = [
+                    { path: 'time_ranges'}
+                ];
+                ConsultingHour.populate(consultingHour, opts, function (err, populated) {
+                    if(err) return res.status(meta.code).json(formatResponse.do(meta, populated));
+                    return res.status(meta.code).json(formatResponse.do(meta, savedConsultingHour));
+                });
             }
         });
     }

@@ -9,6 +9,7 @@ var config = require('config');
 var DoctorRequest = require('../../models/doctor-request');
 var User = require('../../models/user');
 var Doctor = require('../../models/doctor');
+var Patient = require('../../models/patient');
 var formatResponse = require('../../utils/format-response');
 var helper = require('../../utils/helper');
 
@@ -149,12 +150,17 @@ module.exports = {
     approve: function(req, res, next) {
         var meta = {code: 200, success: true};
         var error = {};
+        var userId = req.userId;
         var doctorRequest = req.doctorRequest;
         var password = helper.defaultPassword();
         _.extend(doctorRequest, {approved:true});
-        User.findOne({email:doctorRequest.email}).exec()
-            .then(function (foundUser) {
-                if(foundUser){
+        Q.all([User.findById(userId),User.findOne({email:doctorRequest.email})])
+            .spread(function (foundUser,existingUser) {
+                if(!foundUser.is_admin){
+                    error = helper.transformToError({code: 403, message: "You are not authorized to perform this operation"}).toCustom();
+                    throw error;
+                }
+                if(existingUser){
                     error = helper.transformToError({code: 409, message: "A user with this email exists already"}).toCustom();
                     throw error;
                 }
@@ -167,14 +173,18 @@ module.exports = {
                 _.extend(doctorObj,_.pick(savedDoctorRequest,'years_of_practice','current_employer','mdcnr_number','medical_school_attended','specialties'));
                 var user = new User(userObj);
                 var doctor = new Doctor(doctorObj);
-                return Q.all([user.save(),doctor.save()]);
+                var patient = new Patient();
+                return Q.all([user.save(),doctor.save(),patient.save()]);
             })
-            .spread(function (user,doctor) {
+            .spread(function (user,doctor,patient) {
                 user.doctor = doctor._id;
+                user.patient = patient._id;
+
                 doctor.user = user._id;
-                return Q.all([user.save(),doctor.save()]);
+                patient.user = user._id;
+                return Q.all([user.save(),doctor.save(),patient.save()]);
             })
-            .spread(function (user,doctor) {
+            .spread(function (user,doctor,patient) {
                 if(('email' in user && user.email)) {
                     var message = `<p>Hello Dr. <b>`+user.first_name+`</b>, DoctorDial has approved your request and an account has been
                                      created for you with your email, and a default password of <b>`+password+`</b>, please login to change your password.</p>`;

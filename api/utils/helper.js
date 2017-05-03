@@ -65,21 +65,51 @@ exports.appendQueryString = function (url,queryString) {
 
 exports.generateOTCode = function()
 {
-        var nums = [0,1,2,3,4,5,6,7,8,9],
-            selections = "",
-            numPicks = 5;
-        // randomly pick one from the array
-        for (var i = 0; i < numPicks; i++) {
-            var index = Math.floor(Math.random() * nums.length);
-            selections +=nums[index];
-            nums.splice(index, 1);
-        }
-        return 'DD'+selections;
+    return randomChars(6,true);
 };
 
+function randomChars(size,numbersOnly){
+    var numPicks = size ? size : 6;
+    var characters = numbersOnly ?  "0123456789".split("") : "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");
+    var selections = "";
+    // randomly pick one from the array
+    for (var i = 0; i < numPicks; i++) {
+        var index = Math.floor(Math.random() * characters.length);
+        selections += characters[index];
+        characters.splice(index, 1);
+    }
+    return selections;
+}
+
 exports.defaultPassword = function () {
-    var generator = new IDGenerator(6);
-    return 'P'+generator.generate();
+    return 'P'+randomChars(5,false);
+};
+
+exports.validationErrorsToArray = function (error) {
+    var errorsArray = [];
+    if(!_.isEmpty(error))
+    {
+        for(var prop in error)
+        {
+            if(Object.hasOwnProperty.call(error,prop))
+            {
+                _.forEach(error[prop],function (errorMessage) {
+                    errorsArray.push(errorMessage);
+                });
+            }
+        }
+    }
+
+    return errorsArray;
+};
+exports.transformToError = function (obj) {
+    var err = new Error();
+    err.toCustom = function () {
+        this.custom = true;
+        return this;
+    };
+    _.extend(err,obj);
+    return err;
 };
 function IDGenerator(length) {
 
@@ -102,34 +132,4 @@ function IDGenerator(length) {
 
         return id;
     }
-
-
 }
-
-exports.validationErrorsToArray = function (error) {
-    var errorsArray = [];
-    if(!_.isEmpty(error))
-    {
-        for(var prop in error)
-        {
-            if(Object.hasOwnProperty.call(error,prop))
-            {
-                _.forEach(error[prop],function (errorMessage) {
-                    errorsArray.push(errorMessage);
-                });
-            }
-        }
-    }
-
-    return errorsArray;
-};
-
-exports.transformToError = function (obj) {
-    var err = new Error();
-    err.toCustom = function () {
-        this.custom = true;
-        return this;
-    };
-    _.extend(err,obj);
-    return err;
-};

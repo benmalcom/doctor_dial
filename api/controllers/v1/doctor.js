@@ -34,7 +34,15 @@ module.exports = {
     findOne: function (req, res, next) {
         var meta = {code:200, success:true};
         var doctor = req.doctor;
-        res.status(meta.code).json(formatResponse.do(meta,doctor));
+        var opts = [
+            { path: 'user'},
+            { path: 'specialties'}
+        ];
+        Doctor.populate(doctor, opts, function (err, populatedDoctor) {
+            if(err) return res.status(meta.code).json(formatResponse.do(meta, doctor));
+            return res.status(meta.code).json(formatResponse.do(meta, populatedDoctor));
+        });
+
     },
     find: function (req, res, next) {
         var query = req.query;
@@ -54,7 +62,10 @@ module.exports = {
         }
 
         Q.all([
-            Doctor.find().skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
+            Doctor.find().populate([
+                { path: 'user'},
+                { path: 'specialties'}
+            ]).skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
             Doctor.count().exec()
         ]).spread(function(doctors, count) {
             meta.pagination.total_count = count;

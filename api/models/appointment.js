@@ -8,10 +8,11 @@ var Schema = mongoose.Schema;
 var AppointmentSchema = new Schema({
     title: { type: String},
     description: { type: String},
-    time : { type: String},
+    time_ranges: [{ type : Schema.Types.ObjectId, ref: 'TimeRange'}],
     date : { type: Date, default: Date.now},
     patient: { type: Schema.Types.ObjectId, ref: 'User'},
     doctor: { type: Schema.Types.ObjectId, ref: 'User'},
+    approved : { type: Boolean, default: false},
     done : { type: Boolean, default: false}
 },{
     timestamps: true
@@ -19,10 +20,9 @@ var AppointmentSchema = new Schema({
 
 AppointmentSchema.statics.createRules = function() {
     return {
-        time: 'required',
+        time_ranges: 'required|array',
         date: 'required',
-        doctor: 'required',
-        patient: 'required'
+        doctor: 'required'
     };
 };
 

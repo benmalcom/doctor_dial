@@ -2,7 +2,7 @@
  * Created by Malcom on 8/30/2016.
  */
 var Q = require('q');
-var Appointment = require('../../models/appointment');
+var Message = require('../../models/message');
 var formatResponse = require('../../utils/format-response');
 var Validator = require('validatorjs');
 var _ = require('underscore');
@@ -12,19 +12,19 @@ var ObjectId = require('valid-objectid');
 
 module.exports = {
 
-    appointmentIdParam: function (req,res,next,appointment_id) {
+    messageIdParam: function (req,res,next,message_id) {
         var error = {};
-        Appointment.findById(appointment_id, function (err, appointment) {
+        Message.findById(message_id, function (err, message) {
             if (err) {
-                console.error("appointment_id params error ",err);
+                console.error("message_id params error ",err);
                 return next(err);
             }
-            else if(appointment) {
-                req.appointment = appointment;
+            else if(message) {
+                req.message = message;
                 next();
             }
             else {
-                error =  helper.transformToError({code:404,message:"Appointment not found!"}).toCustom();
+                error =  helper.transformToError({code:404,message:"Message not found!"}).toCustom();
                 return next(error);
             }
         });
@@ -35,19 +35,19 @@ module.exports = {
         var error = {};
         var obj = req.body;
         var userId = req.userId;
-        var rules = Appointment.createRules();
+        var rules = Message.createRules();
         var validator = new Validator(obj,rules);
         if(validator.passes()) {
-            var appointment = new Appointment(obj);
-            _.extend(appointment,{patient: userId});
-            appointment.save(function (err,savedAppointment) {
+            var message = new Message(obj);
+            _.extend(message,{sender: userId});
+            message.save(function (err,savedMessage) {
                 if(err) {
-                    error =  helper.transformToError({code:503,message:"Sorry the appointment could not be saved at this time, try again!"}).toCustom();
+                    error =  helper.transformToError({code:503,message:"Sorry the message could not be saved at this time, try again!"}).toCustom();
                     return next(error);
                 }
                 else {
-                    meta.message = "Appointment has been setup!";
-                    res.status(meta.code).json(formatResponse.do(meta,savedAppointment));
+                    meta.message = "Message has been sent!";
+                    res.status(meta.code).json(formatResponse.do(meta,savedMessage));
                 }
             });
 
@@ -63,8 +63,8 @@ module.exports = {
 
     findOne: function (req, res, next) {
         var meta = {code:200, success:true};
-        var appointment = req.appointment;
-        res.status(meta.code).json(formatResponse.do(meta,appointment));
+        var message = req.message;
+        res.status(meta.code).json(formatResponse.do(meta,message));
     },
 
     find: function (req, res, next) {
@@ -75,28 +75,24 @@ module.exports = {
 
         var per_page = query.per_page ? parseInt(query.per_page,"10") : config.get('itemsPerPage.default');
         var page = query.page ? parseInt(query.page,"10") : 1;
-        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/appointments";
+        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/messages";
 
-        if(query.approved){
-            var approved = (query.approved == "true");
-            queryCriteria.approved = approved;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "approved="+approved);
+
+        if(query.opened){
+            var opened = (query.opened == "true");
+            queryCriteria.opened = opened;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "opened="+opened);
         }
-        if(query.done){
-            var done = (query.done == "true");
-            queryCriteria.done = done;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "done="+done);
-        }
-        if(query.doctor && typeof ObjectId.isValid(query.doctor)){
-            var dObjectId = query.doctor;
-            queryCriteria.doctor = dObjectId;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "doctor="+dObjectId);
+        if(query.sender_id && typeof ObjectId.isValid(query.sender_id)){
+            var sObjectId = query.sender_id;
+            queryCriteria.sender = sObjectId;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "sender_id="+sObjectId);
         }
 
-        if(query.patient && typeof ObjectId.isValid(query.patient)) {
-            var pObjectId = query.patient;
-            queryCriteria.patient = pObjectId;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient=" + pObjectId);
+        if(query.receiver_id && typeof ObjectId.isValid(query.receiver_id)){
+            var rObjectId = query.receiver_id;
+            queryCriteria.receiver = rObjectId;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "receiver_id="+rObjectId);
         }
 
         meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl,"page="+page)};
@@ -107,22 +103,21 @@ module.exports = {
         }
 
         Q.all([
-            Appointment.find(queryCriteria)
+            Message.find(queryCriteria)
                 .populate([
-                    { path: 'doctor'},
-                    { path: 'patient'},
-                    { path: 'time_ranges'}
+                    { path: 'sender'},
+                    { path: 'receiver'}
                 ])
                 .skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
-            Appointment.count(queryCriteria).exec()
-        ]).spread(function(appointments, count) {
+            Message.count(queryCriteria).exec()
+        ]).spread(function(messages, count) {
             meta.pagination.total_count = count;
             if(count > (per_page * page)) {
                 var next = page + 1;
                 meta.pagination.next = next;
                 meta.pagination.next_page = helper.appendQueryString(baseRequestUrl,"page="+next);
             }
-            res.status(meta.code).json(formatResponse.do(meta,appointments));
+            res.status(meta.code).json(formatResponse.do(meta,messages));
         }, function(err) {
             console.log("err ",err);
             error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
@@ -133,14 +128,14 @@ module.exports = {
     delete: function (req, res, next) {
         var meta = {code:200, success:true},
             error = {},
-            appointment = req.appointment;
-        appointment.remove(function (err) {
+            message = req.message;
+        message.remove(function (err) {
             if(err){
                 error =  helper.transformToError({code:503,message:"Error in server interaction"}).toCustom();
                 return next(error);
             }
             else {
-                meta.message = "Appointment deleted!";
+                meta.message = "Message deleted!";
                 res.status(meta.code).json(formatResponse.do(meta));
             }
         }); //TODO: Handle errors
@@ -150,16 +145,16 @@ module.exports = {
         var meta = {code:200, success:true},
             obj = req.body,
             error = {},
-            appointment = req.appointment;
-        _.extend(appointment,obj);
-        appointment.save(function (err,savedAppointment) {
+            message = req.message;
+        _.extend(message,obj);
+        message.save(function (err,savedMessage) {
             if(err) {
-                error =  helper.transformToError({code:503,message:"Sorry your appointment not be updated at this time, try again!"}).toCustom();
+                error =  helper.transformToError({code:503,message:"Sorry your message not be updated at this time, try again!"}).toCustom();
                 return next(error);
             }
             else {
                 meta.success = true;
-                res.status(meta.code).json(formatResponse.do(meta,savedAppointment));
+                res.status(meta.code).json(formatResponse.do(meta,savedMessage));
             }
         });
     }

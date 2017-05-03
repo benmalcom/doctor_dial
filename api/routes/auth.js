@@ -15,7 +15,7 @@ router.use(checkToken);
 router.post('/register',AuthController.startRegistration)
     .post('/change-password', AuthController.changePassword)
     .post('/verify-code',AuthController.verifyCode)
-    //.post('/reset-password', AuthController.resetPassword)
+    .post('/reset-password', AuthController.resetPassword)
     .post('/login', AuthController.login);
 
 module.exports = router;

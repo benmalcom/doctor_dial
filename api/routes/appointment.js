@@ -11,14 +11,15 @@ var checkToken = require('../../api/middlewares/auth_token');
 //Middleware to check authorization token
 router.use(checkToken);
 
-router.route('/appointments')
-    .post(AppointmentController.create)
-    .get(AppointmentController.find);
-
 /*appointment_id param*/
 router.param('appointment_id',AppointmentController.appointmentIdParam);
+
 router.route('/appointments/:appointment_id')
     .get(AppointmentController.findOne)
     .put(AppointmentController.update)
     .delete(AppointmentController.delete);
+router.route('/appointments')
+    .post(AppointmentController.create)
+    .get(AppointmentController.find);
+
 module.exports = router;

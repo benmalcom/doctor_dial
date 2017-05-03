@@ -17,14 +17,6 @@ router.use(checkToken);
 
 var s3 = new aws.S3(config.get('aws.credentials'));
 var uploadAvatar = multer({
-    fileFilter: function (req, file, cb) {
-        if (!file){
-            var error =  helper.transformToError({code:422,message:"You didn't upload any file!"}).toCustom();
-            cb(error);
-        }
-        else
-            cb(null, true);
-    },
     storage: multerS3({
         s3: s3,
         bucket: config.get('aws.bucket'),
@@ -33,7 +25,7 @@ var uploadAvatar = multer({
         },
         key: function (req, file, cb) {
             var ext = file.originalname.split(".").pop();
-            var prefix = "avatars/" + (req.user._id || Date.now())+"."+ext;
+            var prefix = "avatars/" +req.userId+"."+ext;
             cb(null, prefix);
         }
     })
@@ -46,8 +38,7 @@ router.route('/users/:user_id')
     .get(UserController.findOne)
     .put(UserController.update);
 router.get('/users',UserController.find)
-     .post('/users/switch-account',UserController.switchUserType)
-    .post('/users/:user_id/avatar',uploadAvatar.single('avatar'),UserController.uploadAvatar);
+    .post('/users/avatar',uploadAvatar.single('avatar'),UserController.uploadAvatar);
 
 /*router.route('/users/:user_id/doctors/:doctor_id')
     .get(UserController.getDoctor)

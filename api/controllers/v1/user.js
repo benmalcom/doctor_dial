@@ -77,15 +77,19 @@ module.exports = {
             error = {},
             obj = req.body,
             user = req.user;
+        console.log("user ",user);
         _.extend(user,obj);
         user.save(function (err,savedUser) {
             if (err) {
+                console.log("errrr",err);
                 error =  helper.transformToError({code:503,message:"We encountered an error while updating your details!"}).toCustom();
                 return next(error);
             }
             else {
+                console.log("user ",user);
+                console.log("savedUser ",savedUser);
                 meta.message = "Details updated successfully!";
-                res.status(meta.statusCode).json(formatResponse.do(meta,savedUser));
+                res.status(meta.code).json(formatResponse.do(meta,savedUser));
             }
         });
     },
@@ -93,17 +97,16 @@ module.exports = {
         var error = {},
             meta = {code:200, success:true},
             userId = req.userId;
-        User.findById(userId).exec()
-            .then(function (foundUser) {
-                if(!foundUser){
+        if(!req.file){
+            error =  helper.transformToError({code:400,message:"No file uploaded!"}).toCustom();
+            return next(error);
+        }
+        User.findByIdAndUpdate(userId, {'$set': {avatar : req.file.location}}, {new: true})
+            .then(function (savedUser) {
+                if(!savedUser){
                     error =  helper.transformToError({code:404,message:"User not found!"}).toCustom();
                     throw error;
                 }
-                var updateObj = {avatar : req.file ? req.file.location : ""};
-                _.extend(foundUser,updateObj);
-                return foundUser.save();
-            })
-            .then(function (savedUser) {
                 meta.message = "Avatar updated successfully!";
                 res.status(meta.code).json(formatResponse.do(meta,savedUser));
             },function (err) {
@@ -112,51 +115,4 @@ module.exports = {
                 return next(error);
             });
     },
-    switchUserType: function (req, res, next) {
-        var meta = {code:200, success:true},
-            error = {},
-            obj = req.body,
-            rules = {user_type: 'required'},
-            validator = new Validator(obj,rules);
-        if(validator.passes()) {
-            var userId = req.userId;
-            User.findById(userId).exec()
-                .then(function (foundUser) {
-                    if(!foundUser){
-                        error =  helper.transformToError({code:404,message:"User not found!"}).toCustom();
-                        throw error;
-                    }
-                    //Check if user has the kind of account to be switched to
-                    var userTypeIndex = foundUser.user_types.indexOf(obj.user_type);
-                    if(userTypeIndex > -1){
-                        if(userTypeIndex == 0){
-                            error =  helper.transformToError({code:409,message:"This is already your default account!"}).toCustom();
-                            throw error;
-                        }
-                        else {
-                            foundUser.user_types.pull(obj.user_type).unshift(obj.user_type);
-                        }
-                    }
-                    else {
-                        foundUser.user_types.unshift(obj.user_type);
-                    }
-                    //switch indexes
-                    return foundUser.save();
-                })
-                .then(function (savedUser) {
-                    meta.message = "You switched account!";
-                    res.status(meta.code).json(formatResponse.do(meta,savedUser));
-                },function (err) {
-                    console.info("error now", err);
-                    error =  helper.transformToError({code: (err.custom ? err.code : 503), message: (err.custom ? err.message : "We encountered an error while switching your account!")});
-                    return next(error);
-                });
-        }
-        else
-        {
-            error =  helper.transformToError({code:400,message:"There are problems with your input",
-                errors:helper.validationErrorsToArray(validator.errors.all())}).toCustom();
-            return next(error);
-        }
-    }
 };

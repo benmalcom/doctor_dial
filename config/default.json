@@ -50,10 +50,10 @@
     },
     "aws": {
         "credentials": {
-            "accessKeyId": "AKIAJDCCOFR3ZUWOI7OA",
-            "secretAccessKey": "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",
+            "accessKeyId": "AKIAICBRZVMGLHKT6U7Q",
+            "secretAccessKey": "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",
             "region": "us-west-2"
         },
-        "bucket": "docdial"
+        "bucket": "doctor-dial"
     }
 }

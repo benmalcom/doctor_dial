@@ -7,6 +7,7 @@ var misc = require('../../utils/misc');
 var Validator = require('validatorjs');
 var _ = require('underscore');
 var Q = require('q');
+var config = require('config');
 var bcrypt = require('bcrypt-nodejs');
 var formatResponse = require('../../utils/format-response');
 var helper = require('../../utils/helper');
@@ -70,12 +71,11 @@ module.exports = {
         }
 
     },
-
     startRegistration: function (req, res, next) {
         var meta = {code: 200, success: false},
             error = {},
             obj = req.body,
-            rules = {password: 'required|min:6', user_type: 'required'},
+            rules = {password: 'required|min:6'},
             validator = new Validator(obj, rules);
         if (validator.passes()) {
             if (Object.hasOwnProperty.call(obj, 'mobile') || Object.hasOwnProperty.call(obj, 'email')) {
@@ -105,10 +105,7 @@ module.exports = {
                             }
                         }
                         obj.verification_code = helper.generateOTCode();
-                        var defaultUserType = obj.user_type;
-                        delete obj.user_type;
                         var newUser = new User(obj);
-                        newUser.user_types = [defaultUserType];
                         var p1 = newUser.save();
                         var patient = new Patient();
                         var p2 = patient.save();
@@ -226,6 +223,7 @@ module.exports = {
                         throw error;
                     }
                     user.password = obj.new_password;
+                    if(user.change_password) user.change_password = false;
                     return user.save();
                 })
                 .then(function (user) {
@@ -247,6 +245,52 @@ module.exports = {
                 message: "There are problems with your input",
                 errors: helper.validationErrorsToArray(validator.errors.all())
             }).toCustom();
+            return next(error);
+        }
+
+    },
+    resetPassword: function (req, res, next) {
+        var meta = {code:200, success:true};
+        var error = {};
+        var obj = req.body;
+        var rules = {email: 'required|email'};
+        var validator = new Validator(obj,rules);
+        if(validator.passes())
+        {
+            var password = helper.defaultPassword();
+            User.findOne({email:obj.email}).exec()
+                .then(function (existingUser) {
+                    if(!existingUser) {
+                        error =  helper.transformToError({code:404,message:"User with this email not found!"}).toCustom();
+                        throw error;
+                    }
+
+                    existingUser.password = password;
+                    existingUser.change_password = true;
+                    return existingUser.save();
+                })
+                .then(function (existingUser) {
+
+                    var message = "Please use this password, <b>" + password + "</b> to login and change to your desired password.";
+                    helper.sendMail(config.get('email.from'), existingUser.email, "Password Reset", message)
+                        .then(function (err) {
+                            console.log('Email Error: ' + JSON.stringify(err));
+                        }, function (info) {
+                            console.log('Email Success: ' + JSON.stringify(info));
+                        });
+
+                    meta.message = "A temporary password has been sent to "+obj.email+", login to change it.";
+                    return res.status(meta.code).json(formatResponse.do(meta,existingUser));
+                },function (err) {
+                    console.log("error ", err);
+                    error =  helper.transformToError({code: (err.custom ? err.code : 503), message: (err.custom ? err.message : "Error in server interaction")});
+                    return next(error);
+                });
+        }
+        else
+        {
+            error =  helper.transformToError({code:400,message:"There are problems with your input",
+                errors:validator.errors.all()}).toCustom();
             return next(error);
         }
 

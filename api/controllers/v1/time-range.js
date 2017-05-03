@@ -31,8 +31,8 @@ module.exports = {
         });
     },
     create: function(req, res, next){
-        var meta = {code:200, success:true},
-            error = {};
+        var meta = {code:200, success:true};
+        var error = {};
         var obj = req.body;
         var rules = TimeRange.createRules();
         var validator = new Validator(obj,rules);
@@ -63,32 +63,14 @@ module.exports = {
         res.status(meta.code).json(formatResponse.do(meta,timeRange));
     },
     find: function (req, res, next) {
-        var query = req.query,
-            meta = {code:200, success:true},
-            error = {};
-
-        var per_page = query.per_page ? parseInt(query.per_page,"10") : config.get('itemsPerPage.default');
-        var page = query.page ? parseInt(query.page,"10") : 1;
-        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/time-ranges";
-        meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl, "page="+page)};
+        var query = req.query;
+        var meta = {code:200, success:true};
+        var error = {};
+        meta.current_page = config.get('app.baseUrl')+config.get('api.prefix')+"/time-ranges";
 
 
-        if(page > 1) {
-            var prev = page - 1;
-            meta.pagination.previous = prev;
-            meta.pagination.previous_page = helper.appendQueryString(baseRequestUrl,"page="+prev);
-        }
-
-        Q.all([
-            TimeRange.find().skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
-            TimeRange.count().exec()
-        ]).spread(function(timeRanges, count) {
-            meta.pagination.total_count = count;
-            if(count > (per_page * page)) {
-                var next = page + 1;
-                meta.pagination.next = next;
-                meta.pagination.next_page = helper.appendQueryString(baseRequestUrl,"page="+next);
-            }
+        TimeRange.find()
+        .then(function(timeRanges) {
             res.status(meta.code).json(formatResponse.do(meta,timeRanges));
         }, function(err) {
             console.log("err ",err);
