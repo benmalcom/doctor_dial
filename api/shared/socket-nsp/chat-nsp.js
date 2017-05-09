@@ -8,12 +8,14 @@ var moment = require('moment');
 
 module.exports = function (chatNsp) {
     var clients = [];
+    var roomName;
 
     chatNsp.on('connection', function (socket) {
         console.log("socket connected to /chat namespace!", socket.id);
 
 
         socket.on("register",function (objectId) {
+            console.log("New reg ",objectId);
             var exists = _.findWhere(clients,{_id:objectId});
             if(exists) {
                 var index = clients.indexOf(exists);
@@ -25,6 +27,12 @@ module.exports = function (chatNsp) {
             }
 
             socket.broadcast.emit("new register",clients);
+        });
+
+        socket.on("room name",function (newRoomName) {
+            roomName = newRoomName;
+            console.log("New room name ",roomName);
+            socket.broadcast.emit("new room name",roomName);
         });
 
         socket.on("message",function (message) {
