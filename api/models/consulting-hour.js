@@ -8,7 +8,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var ConsultingHourSchema = new Schema({
-    doctor: {type: Schema.Types.ObjectId, ref: 'User'},
+    doctor: {type: Schema.Types.ObjectId, ref: 'Doctor'},
     time_ranges: [{ type : Schema.Types.ObjectId, ref: 'TimeRange'}],
     day: { type: String, enum: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]},
     sequence: {type: Number},
@@ -20,7 +20,8 @@ var ConsultingHourSchema = new Schema({
 ConsultingHourSchema.statics.createRules = function() {
     return {
         time_ranges : 'required',
-        day : 'required'
+        day : 'required',
+        doctor: 'required'
     }
 };
 
@@ -48,8 +49,6 @@ ConsultingHourSchema.pre('save', function(next){
 
         doc.sequence = sequence;
     }
-
-    console.log("ch b4 save ",doc);
     next();
 });
 

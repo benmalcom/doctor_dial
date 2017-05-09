@@ -6,15 +6,16 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var MyDoctorSchema = new Schema({
-    patient: {type: Schema.Types.ObjectId, ref: 'User'},
-    doctor: {type: Schema.Types.ObjectId, ref: 'User'}
+    patient: {type: Schema.Types.ObjectId, ref: 'Patient'},
+    doctor: {type: Schema.Types.ObjectId, ref: 'Doctor'}
 },{
     timestamps: true
 });
 
 MyDoctorSchema.statics.createRules = function() {
     return {
-        doctor : 'required'
+        doctor : 'required',
+        patient : 'required'
     }
 };
 

@@ -40,7 +40,6 @@ module.exports = {
         var validator = new Validator(obj,rules);
         if(validator.passes()) {
             var consultingHour = new ConsultingHour(obj);
-            _.extend(consultingHour,{doctor: userId});
             consultingHour.save(function (err,savedConsultingHour) {
                 if(err) {
                     error =  helper.transformToError({code:503,message:"Sorry the consulting hour could not be saved at this time, try again!"}).toCustom();

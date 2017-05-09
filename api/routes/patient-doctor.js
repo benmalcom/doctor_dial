@@ -15,11 +15,12 @@ router.use(checkToken);
 
 
 /*patient_doctor_id param*/
-router.param('my_doctor_id',PatientDoctorController.patientDoctorIdParam);
+router.param('patient_doctor_id',PatientDoctorController.patientDoctorIdParam);
 router.route('/patient-doctors/:patient_doctor_id')
     .get(PatientDoctorController.findOne)
     .delete(PatientDoctorController.delete);
 
-router.get('/doctors/me',PatientDoctorController.findMyDoctors);
-router.post('/patient-doctors',PatientDoctorController.create);
+router.route('/patient-doctors')
+    .post(PatientDoctorController.create)
+    .get(PatientDoctorController.find);
 module.exports = router;

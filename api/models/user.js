@@ -97,6 +97,10 @@ UserSchema.post('remove', function(doc) {
     console.log('%s has been removed', doc._id);
 });
 
+UserSchema.virtual('full_name').get(function () {
+    return this.first_name + ' ' + this.last_name;
+});
+
 UserSchema.methods.comparePassword = function(password){
     return bcrypt.compareSync(password, this.password);
 };
@@ -108,7 +112,7 @@ UserSchema.methods.gravatar = function(size){
     return 'https://gravatar.com/avatar/' +md5+'?s=' + size +'&d=retro';
 };
 UserSchema.methods.toJSON = function() {
-    var obj = this.toObject();
+    var obj = this.toObject({ virtuals: true });
     delete obj.password;
     return obj;
 };

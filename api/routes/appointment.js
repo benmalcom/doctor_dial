@@ -14,6 +14,7 @@ router.use(checkToken);
 /*appointment_id param*/
 router.param('appointment_id',AppointmentController.appointmentIdParam);
 
+router.get('/appointments/check',AppointmentController.checkAppointment);
 router.route('/appointments/:appointment_id')
     .get(AppointmentController.findOne)
     .put(AppointmentController.update)

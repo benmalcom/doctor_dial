@@ -39,7 +39,6 @@ module.exports = {
         var validator = new Validator(obj,rules);
         if(validator.passes()) {
             var appointment = new Appointment(obj);
-            _.extend(appointment,{patient: userId});
             appointment.save(function (err,savedAppointment) {
                 if(err) {
                     error =  helper.transformToError({code:503,message:"Sorry the appointment could not be saved at this time, try again!"}).toCustom();
@@ -82,21 +81,33 @@ module.exports = {
             queryCriteria.approved = approved;
             baseRequestUrl = helper.appendQueryString(baseRequestUrl, "approved="+approved);
         }
-        if(query.done){
-            var done = (query.done == "true");
-            queryCriteria.done = done;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "done="+done);
+        if(query.closed){
+            var closed = (query.closed == "true");
+            queryCriteria.closed = closed;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "closed="+closed);
         }
-        if(query.doctor && typeof ObjectId.isValid(query.doctor)){
-            var dObjectId = query.doctor;
-            queryCriteria.doctor = dObjectId;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "doctor="+dObjectId);
+        if(query.doctor_id && typeof ObjectId.isValid(query.doctor_id)){
+            var doctor = query.doctor_id;
+            queryCriteria.doctor = doctor;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "doctor_id="+doctor);
         }
 
-        if(query.patient && typeof ObjectId.isValid(query.patient)) {
-            var pObjectId = query.patient;
-            queryCriteria.patient = pObjectId;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient=" + pObjectId);
+        if(query.patient_id && typeof ObjectId.isValid(query.patient_id)) {
+            var patient = query.patient_id;
+            queryCriteria.patient = patient;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient_id=" + patient);
+        }
+
+        if(query.time_range_id && typeof ObjectId.isValid(query.time_range_id)){
+            var time_range_id = query.time_range_id;
+            queryCriteria.time_range = time_range_id;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "time_range_id="+time_range_id);
+        }
+
+        if(query.date){
+            var date = query.date;
+            queryCriteria.date = new Date(date);
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "date="+date);
         }
 
         meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl,"page="+page)};
@@ -109,9 +120,81 @@ module.exports = {
         Q.all([
             Appointment.find(queryCriteria)
                 .populate([
-                    { path: 'doctor'},
-                    { path: 'patient'},
-                    { path: 'time_ranges'}
+                    { path: 'doctor', populate:{path: 'user'}},
+                    { path: 'patient', populate:{path: 'user'}}
+                ])
+                .skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
+            Appointment.count(queryCriteria).exec()
+        ]).spread(function(appointments, count) {
+            meta.pagination.total_count = count;
+            if(count > (per_page * page)) {
+                var next = page + 1;
+                meta.pagination.next = next;
+                meta.pagination.next_page = helper.appendQueryString(baseRequestUrl,"page="+next);
+            }
+            res.status(meta.code).json(formatResponse.do(meta,appointments));
+        }, function(err) {
+            console.log("err ",err);
+            error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
+            return next(error);
+        });
+    },
+    checkAppointment: function (req, res, next) {
+        var query = req.query;
+        var meta = {code:200, success:true};
+        var error = {};
+        var queryCriteria = {};
+
+        var per_page = query.per_page ? parseInt(query.per_page,"10") : config.get('itemsPerPage.default');
+        var page = query.page ? parseInt(query.page,"10") : 1;
+        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/appointments/check";
+
+        if(query.approved){
+            var approved = (query.approved == "true");
+            queryCriteria.approved = approved;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "approved="+approved);
+        }
+        if(query.closed){
+            var closed = (query.closed == "true");
+            queryCriteria.closed = closed;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "closed="+closed);
+        }
+        if(query.doctor_id && typeof ObjectId.isValid(query.doctor_id)){
+            var doctor = query.doctor_id;
+            queryCriteria.doctor = doctor;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "doctor_id="+doctor);
+        }
+
+        if(query.patient_id && typeof ObjectId.isValid(query.patient_id)) {
+            var patient = query.patient_id;
+            queryCriteria.patient = patient;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient_id=" + patient);
+        }
+
+        if(query.time_range_id && typeof ObjectId.isValid(query.time_range_id)){
+            var time_range_id = query.time_range_id;
+            queryCriteria.time_range = time_range_id;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "time_range_id="+time_range_id);
+        }
+
+        if(query.date){
+            var date = query.date;
+            queryCriteria.date = new Date(date);
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "date="+date);
+        }
+
+        meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl,"page="+page)};
+        if(page > 1) {
+            var prev = page - 1;
+            meta.pagination.previous = prev;
+            meta.pagination.previous_page = helper.appendQueryString(baseRequestUrl,"page="+prev);
+        }
+
+        Q.all([
+            Appointment.find(queryCriteria)
+                .populate([
+                    { path: 'doctor', populate:{path: 'user'}},
+                    { path: 'patient', populate:{path: 'user'}}
                 ])
                 .skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
             Appointment.count(queryCriteria).exec()

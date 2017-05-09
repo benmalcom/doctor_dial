@@ -37,6 +37,7 @@
     "q": "^1.4.1",
     "sanitize-html": "^1.13.0",
     "serve-favicon": "~2.3.0",
+    "socket.io": "^1.7.4",
     "twilio": "^2.10.0",
     "underscore": "^1.8.3",
     "valid-objectid": "0.0.2",

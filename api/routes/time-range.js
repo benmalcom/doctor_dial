@@ -17,6 +17,10 @@ router.route('/time-ranges')
     .post(TimeRangeController.create)
     .get(TimeRangeController.find);
 
+router.route('/free-time-ranges')
+    .get(TimeRangeController.findFreeTimeRanges);
+
+
 /*time_range_id param*/
 router.param('time_range_id',TimeRangeController.timeRangeIdParam);
 router.route('/time-ranges/:time_range_id')

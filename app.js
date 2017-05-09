@@ -16,6 +16,8 @@ var engine = require('ejs-mate');
 var sanitizeInputs = require('./api/middlewares/sanitize');
 var setApiVersion = require('./api/middlewares/check_api_version');
 var formatResponse = require('./api/utils/format-response');
+var io = require('./api/shared/socket-nsp/io');
+
 
 
 var apiRoutes = require('./api/routes/index');
@@ -74,6 +76,7 @@ app.use(function(err, req, res, next) {
 });
 
 var server = http.createServer(app);
+io.attach(server);
 server.listen(app.get('port'), function () {
     console.log('app listening on port ', app.get('port'));
 });

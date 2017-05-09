@@ -149,22 +149,30 @@ module.exports = {
     },
     approve: function(req, res, next) {
         var meta = {code: 200, success: true};
+        var obj = req.body;
         var error = {};
         var userId = req.userId;
-        var doctorRequest = req.doctorRequest;
         var password = helper.defaultPassword();
-        _.extend(doctorRequest, {approved:true});
-        Q.all([User.findById(userId),User.findOne({email:doctorRequest.email})])
-            .spread(function (foundUser,existingUser) {
-                if(!foundUser.is_admin){
-                    error = helper.transformToError({code: 403, message: "You are not authorized to perform this operation"}).toCustom();
+        if(!obj.email){
+            error =  helper.transformToError({code:400,message:"The request email is required!"}).toCustom();
+            return next(error);
+        }
+        Q.all([User.findById(userId), User.findOne({email:obj.email}), DoctorRequest.findOne({email:obj.email})])
+            .spread(function (foundUser,existingUser,existingRequest) {
+                if(!foundUser && !foundUser.is_admin){
+                    error = helper.transformToError({code: 403, message: "You are not authorized to perform this operation!"}).toCustom();
                     throw error;
                 }
                 if(existingUser){
-                    error = helper.transformToError({code: 409, message: "A user with this email exists already"}).toCustom();
+                    error = helper.transformToError({code: 409, message: "Request cannot be approved, a user with this email exists already!"}).toCustom();
                     throw error;
                 }
-                return doctorRequest.save();
+                if(!existingRequest){
+                    error = helper.transformToError({code: 404, message: "This request does not exist or has been approved!"}).toCustom();
+                    throw error;
+                }
+                _.extend(existingRequest, {approved:true});
+                return existingRequest.save();
             })
             .then(function (savedDoctorRequest) {
                 var doctorObj = {};

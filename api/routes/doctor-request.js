@@ -20,7 +20,7 @@ router.route('/doctor-requests')
 
 /*doctor_request_id param*/
 router.param('doctor_request_id',DoctorRequestController.doctorRequestIdParam);
-router.post('/doctor-requests/:doctor_request_id/approve',DoctorRequestController.approve);
+router.post('/doctor-requests/approve',DoctorRequestController.approve);
 router.route('/doctor-requests/:doctor_request_id')
     .get(DoctorRequestController.findOne)
     .put(DoctorRequestController.update)

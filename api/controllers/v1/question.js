@@ -40,7 +40,6 @@ module.exports = {
         var validator = new Validator(obj,rules);
         if(validator.passes()) {
             var question = new Question(obj);
-            _.extend(question,{user: userId});
             question.save(function (err,savedQuestion) {
                 if(err) {
                     error =  helper.transformToError({code:503,question:"Sorry the question could not be saved at this time, try again!"}).toCustom();
@@ -77,15 +76,15 @@ module.exports = {
         var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/questions";
 
 
-        if(answered.opened){
+        if(query.answered){
             var answered = (query.answered == "true");
             queryCriteria.answered = answered;
             baseRequestUrl = helper.appendQueryString(baseRequestUrl, "answered="+answered);
         }
-        if(query.user && typeof ObjectId.isValid(query.user)){
-            var uObjectId = query.user;
-            queryCriteria.user = uObjectId;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "user="+uObjectId);
+        if(query.patient_id && typeof ObjectId.isValid(query.patient_id)){
+            var patient = query.patient_id;
+            queryCriteria.patient = patient;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient_id="+patient);
         }
 
 

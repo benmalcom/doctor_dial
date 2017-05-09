@@ -21,6 +21,8 @@ module.exports = function (app) {
     app.use(prefix,require('./question'));
     app.use(prefix,require('./patient-doctor'));
     app.use(prefix,require('./consulting-hour'));
+    app.use(prefix,require('./chat'));
+
 
     app.use(config.get('api.prefix')+"/*",function (req,res) {
         var meta = {success:false,code:404};

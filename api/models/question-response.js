@@ -6,7 +6,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var QuestionResponseSchema = new Schema({
-    user: {type: Schema.Types.ObjectId, ref: 'User'},
+    doctor: {type: Schema.Types.ObjectId, ref: 'Doctor'},
     body: { type: String},
     question: { type: Schema.Types.ObjectId, ref: 'Question'},
     media: [{type: Schema.Types.ObjectId, ref: 'Media'}]
@@ -16,7 +16,9 @@ var QuestionResponseSchema = new Schema({
 
 QuestionResponseSchema.statics.createRules = function() {
     return {
-        body : 'required'
+        body : 'required',
+        doctor: 'required',
+        question: 'required'
     }
 };
 

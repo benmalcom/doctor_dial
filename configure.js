@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 module.exports = function () {
 
     process.env.API_VERSION = config.get('api.versions').pop();
+    /*process.env.TZ = "Africa/Lagos";*/
 
     //Set upload directories
     global.__base = __dirname + '/';

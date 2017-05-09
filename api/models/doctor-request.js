@@ -15,7 +15,7 @@ var DoctorRequestSchema = new Schema({
     mobile : { type: String},
     email: { type : String, unique:true},
     gender : { type: String},
-    dob: { type : String},
+    dob: { type : Date},
     years_of_practice: { type : String},
     current_employer: { type : String},
     mdcnr_number: {type : String},

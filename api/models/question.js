@@ -6,7 +6,8 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var QuestionSchema = new Schema({
-    user: {type: Schema.Types.ObjectId, ref: 'User'},
+    title: { type: String},
+    patient: {type: Schema.Types.ObjectId, ref: 'Patient'},
     body: { type: String},
     answered: { type: Boolean, default: false},
     media: [{type: Schema.Types.ObjectId, ref: 'Media'}]

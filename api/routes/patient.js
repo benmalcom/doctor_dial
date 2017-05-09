@@ -13,6 +13,7 @@ router.use(checkToken);
 
 /*patient_id param*/
 router.param('patient_id',PatientController.patientIdParam);
+router.get('/patient/stats',PatientController.findStats);
 router.route('/patients/:patient_id')
     .get(PatientController.findOne)
     .put(PatientController.update)

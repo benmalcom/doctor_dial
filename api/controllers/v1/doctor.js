@@ -81,6 +81,44 @@ module.exports = {
             return next(error);
         });
     },
+    findMyDoctors: function (req, res, next) {
+        var query = req.query;
+        var meta = {code:200, success:true};
+        var error = {};
+
+        var per_page = query.per_page ? parseInt(query.per_page,"10") : config.get('itemsPerPage.default');
+        var page = query.page ? parseInt(query.page,"10") : 1;
+        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/doctors/me";
+        meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl, "page="+page)};
+
+
+        if(page > 1) {
+            var prev = page - 1;
+            meta.pagination.previous = prev;
+            meta.pagination.previous_page = helper.appendQueryString(baseRequestUrl,"page="+prev);
+        }
+
+        Q.all([
+            Doctor.find().populate([
+                { path: 'user'},
+                { path: 'specialties'}
+            ]).skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
+            Doctor.count().exec()
+        ]).spread(function(doctors, count) {
+            meta.pagination.total_count = count;
+            if(count > (per_page * page)) {
+                var next = page + 1;
+                meta.pagination.next = next;
+                meta.pagination.next_page = helper.appendQueryString(baseRequestUrl,"page="+next);
+            }
+            res.status(meta.code).json(formatResponse.do(meta,doctors));
+        }, function(err) {
+            console.log("err ",err);
+            error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
+            return next(error);
+        });
+    },
+
     delete: function (req, res, next) {
         var meta = {code:200, success:true};
         var error = {};

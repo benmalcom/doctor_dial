@@ -15,6 +15,8 @@ router.route('/doctors')
     //.post(DoctorController.create)
     .get(DoctorController.find);
 
+//router.get('/doctors/me',DoctorController.findMyDoctors);
+
 /*doctor_id param*/
 router.param('doctor_id',DoctorController.doctorIdParam);
 router.route('/doctors/:doctor_id')
