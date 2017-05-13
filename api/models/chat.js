@@ -7,7 +7,8 @@ var Schema = mongoose.Schema;
 
 var ChatSchema = new Schema({
     message: {type: String},
-    sender: {type: Schema.Types.ObjectId, ref: 'User'},
+    doctor: {type: Schema.Types.ObjectId, ref: 'Doctor'},
+    patient: {type: Schema.Types.ObjectId, ref: 'Patient'},
     appointment: {type: Schema.Types.ObjectId, ref: 'Appointment'},
     visible: {type: Boolean, default: true}
 }, {
@@ -16,7 +17,8 @@ var ChatSchema = new Schema({
 
 ChatSchema.statics.createRules = function () {
     return {
-        sender: 'required',
+        doctor: 'required',
+        patient: 'required',
         message: 'required',
         appointment: 'required'
     };

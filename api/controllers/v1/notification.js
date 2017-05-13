@@ -1,9 +1,9 @@
 /**
- * Created by Malcom on 5/9/2017.
+ * Created by Malcom on 5/13/2017.
  */
 
 var Q = require('q');
-var Chat = require('../../models/chat');
+var Notification = require('../../models/notification');
 var formatResponse = require('../../utils/format-response');
 var Validator = require('validatorjs');
 var _ = require('underscore');
@@ -13,19 +13,19 @@ var ObjectId = require('valid-objectid');
 
 module.exports = {
 
-    chatIdParam: function (req,res,next,chat_id) {
+    notificationIdParam: function (req,res,next,notification_id) {
         var error = {};
-        Chat.findById(chat_id, function (err, chat) {
+        Notification.findById(notification_id, function (err, notification) {
             if (err) {
-                console.error("chat_id params error ",err);
+                console.error("notification_id params error ",err);
                 return next(err);
             }
-            else if(chat) {
-                req.chat = chat;
+            else if(notification) {
+                req.notification = notification;
                 next();
             }
             else {
-                error =  helper.transformToError({code:404,message:"Chat not found!"}).toCustom();
+                error =  helper.transformToError({code:404,message:"Notification not found!"}).toCustom();
                 return next(error);
             }
         });
@@ -35,18 +35,18 @@ module.exports = {
         var meta = {code:200, success:true};
         var error = {};
         var obj = req.body;
-        var rules = Chat.createRules();
+        var rules = Notification.createRules();
         var validator = new Validator(obj,rules);
         if(validator.passes()) {
-            var chat = new Chat(obj);
-            chat.save(function (err,savedChat) {
+            var notification = new Notification(obj);
+            notification.save(function (err,savedNotification) {
                 if(err) {
-                    error =  helper.transformToError({code:503,message:"Sorry the chat could not be saved at this time, try again!"}).toCustom();
+                    error =  helper.transformToError({code:503,message:"Sorry the notification could not be saved at this time, try again!"}).toCustom();
                     return next(error);
                 }
                 else {
-                    meta.message = "Chat has been saved!";
-                    return res.status(meta.code).json(formatResponse.do(meta, savedChat));
+                    meta.message = "Notification has been saved!";
+                    return res.status(meta.code).json(formatResponse.do(meta, savedNotification));
                 }
             });
 
@@ -62,14 +62,13 @@ module.exports = {
 
     findOne: function (req, res, next) {
         var meta = {code:200, success:true};
-        var chat = req.chat;
+        var notification = req.notification;
         var opts = [
-            { path: 'doctor', populate: {path: 'user'}},
-            { path: 'patient', populate: {path: 'user'}}
+            {path: 'user'}
         ];
-        Chat.populate(chat, opts, function (err, populated) {
+        Notification.populate(notification, opts, function (err, populated) {
             if(err) return res.status(meta.code).json(formatResponse.do(meta, populated));
-            return res.status(meta.code).json(formatResponse.do(meta, chat));
+            return res.status(meta.code).json(formatResponse.do(meta, notification));
         });
     },
 
@@ -81,19 +80,14 @@ module.exports = {
 
         var per_page = query.per_page ? parseInt(query.per_page,"10") : config.get('itemsPerPage.default');
         var page = query.page ? parseInt(query.page,"10") : 1;
-        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/chats";
+        var baseRequestUrl = config.get('app.baseUrl')+config.get('api.prefix')+"/notifications";
 
-        if(query.doctor_id && typeof ObjectId.isValid(query.doctor_id)){
-            var doctor = query.doctor_id;
-            queryCriteria.doctor = doctor;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "doctor="+doctor);
+        if(query.user_id && typeof ObjectId.isValid(query.user_id)){
+            var user = query.user_id;
+            queryCriteria.user = user;
+            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "user_id="+user);
         }
 
-        if(query.patient_id && typeof ObjectId.isValid(query.patient_id)){
-            var patient = query.patient_id;
-            queryCriteria.patient = patient;
-            baseRequestUrl = helper.appendQueryString(baseRequestUrl, "patient="+patient);
-        }
 
         meta.pagination = {per_page:per_page,page:page,current_page:helper.appendQueryString(baseRequestUrl,"page="+page)};
         if(page > 1) {
@@ -103,21 +97,20 @@ module.exports = {
         }
 
         Q.all([
-            Chat.find(queryCriteria)
+            Notification.find(queryCriteria)
                 .populate([
-                    { path: 'doctor', populate: {path: 'user'}},
-                    { path: 'patient', populate: {path: 'user'}}
+                    {path: 'user'}
                 ])
                 .skip(per_page * (page-1)).limit(per_page).sort('-createdAt'),
-            Chat.count(queryCriteria).exec()
-        ]).spread(function(chats, count) {
+            Notification.count(queryCriteria).exec()
+        ]).spread(function(notifications, count) {
             meta.pagination.total_count = count;
             if(count > (per_page * page)) {
                 var next = page + 1;
                 meta.pagination.next = next;
                 meta.pagination.next_page = helper.appendQueryString(baseRequestUrl,"page="+next);
             }
-            res.status(meta.code).json(formatResponse.do(meta,chats));
+            res.status(meta.code).json(formatResponse.do(meta,notifications));
         }, function(err) {
             console.log("err ",err);
             error =  helper.transformToError({code:503,message:"Error in server interaction",extra:err});
@@ -128,14 +121,14 @@ module.exports = {
     delete: function (req, res, next) {
         var meta = {code:200, success:true},
             error = {},
-            chat = req.chat;
-        chat.remove(function (err) {
+            notification = req.notification;
+        notification.remove(function (err) {
             if(err){
                 error =  helper.transformToError({code:503,message:"Error in server interaction"}).toCustom();
                 return next(error);
             }
             else {
-                meta.message = "Chat deleted!";
+                meta.message = "Notification deleted!";
                 res.status(meta.code).json(formatResponse.do(meta));
             }
         }); //TODO: Handle errors
@@ -145,22 +138,21 @@ module.exports = {
         var meta = {code:200, success:true},
             obj = req.body,
             error = {},
-            chat = req.chat;
-        _.extend(chat,obj);
-        chat.save(function (err,savedChat) {
+            notification = req.notification;
+        _.extend(notification,obj);
+        notification.save(function (err,savedNotification) {
             if(err) {
-                error =  helper.transformToError({code:503,message:"Sorry your chat not be updated at this time, try again!"}).toCustom();
+                error =  helper.transformToError({code:503,message:"Sorry your notification not be updated at this time, try again!"}).toCustom();
                 return next(error);
             }
             else {
-                meta.message = "Chat updated!";
+                meta.message = "Notification updated!";
                 var opts = [
-                    { path: 'doctor', populate: {path: 'user'}},
-                    { path: 'patient', populate: {path: 'user'}}
+                    {path: 'user'}
                 ];
-                Chat.populate(chat, opts, function (err, populated) {
+                Notification.populate(notification, opts, function (err, populated) {
                     if(err) return res.status(meta.code).json(formatResponse.do(meta, populated));
-                    return res.status(meta.code).json(formatResponse.do(meta, savedChat));
+                    return res.status(meta.code).json(formatResponse.do(meta, savedNotification));
                 });
             }
         });

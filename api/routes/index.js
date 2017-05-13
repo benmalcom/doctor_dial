@@ -22,6 +22,7 @@ module.exports = function (app) {
     app.use(prefix,require('./patient-doctor'));
     app.use(prefix,require('./consulting-hour'));
     app.use(prefix,require('./chat'));
+    app.use(prefix,require('./notification'));
 
 
     app.use(config.get('api.prefix')+"/*",function (req,res) {

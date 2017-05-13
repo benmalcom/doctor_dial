@@ -7,45 +7,47 @@ var _ = require('underscore');
 var moment = require('moment');
 
 module.exports = function (chatNsp) {
-    var clients = [];
+    var roomClients = [];
+    var cliendIds = [];
     var roomName;
 
     chatNsp.on('connection', function (socket) {
         console.log("socket connected to /chat namespace!", socket.id);
 
+        socket.on("room name",function (newRoomName) {
+            roomName = newRoomName;
+            cliendIds = roomName.split("_");
+            socket.broadcast.emit("new room name",roomName);
+        });
+
 
         socket.on("register",function (objectId) {
-            console.log("New reg ",objectId);
-            var exists = _.findWhere(clients,{_id:objectId});
+            var exists = _.findWhere(roomClients,{_id:objectId});
             if(exists) {
-                var index = clients.indexOf(exists);
-                clients[index].socket_id = socket.id;
+                console.log("found exists ",exists);
+                var index = roomClients.indexOf(exists);
+                roomClients[index].socket_id = socket.id;
             }
             else {
                 var obj = {_id:objectId,socket_id:socket.id};
-                clients.push(obj);
+                roomClients.push(obj);
             }
 
-            socket.broadcast.emit("new register",clients);
+            if(cliendIds.indexOf(objectId) > -1){
+                socket.join(roomName);
+            }
+
+            socket.broadcast.emit("new register",roomClients);
         });
 
-        socket.on("room name",function (newRoomName) {
-            roomName = newRoomName;
-            console.log("New room name ",roomName);
-            socket.broadcast.emit("new room name",roomName);
-        });
+
 
         socket.on("message",function (message) {
             message.time = new Date();
             console.log("New message ",message);
-            socket.emit("new message",message);
-            socket.broadcast.emit("new message",message);
+            chatNsp.to(roomName).emit("new message",message);
         });
 
-        socket.on("typing",function (name) {
-            console.log("New typing ",name);
-            socket.broadcast.emit("new typing",name);
-        });
 
     });
 
